@@ -130,3 +130,31 @@ let part1Answer = mappedPuzzleInput
     .reduce(0, +)
 
 print(part1Answer) // 3404722 (correct!)
+
+// MARK: Part 2
+
+func recursiveFuelRequired(forMass mass: Int, fuelSoFar: Int = 0) -> Int {
+    let dividedByThree = Double(mass) / 3
+    let roundedDown = Int(dividedByThree.rounded(.down))
+    let subtractedTwo = roundedDown - 2
+    
+    if subtractedTwo <= 0 {
+        return fuelSoFar
+    } else {
+        return subtractedTwo + recursiveFuelRequired(forMass: subtractedTwo)
+    }
+}
+
+// MARK: Part 2 examples
+
+recursiveFuelRequired(forMass: 14) // 2 (correct)
+recursiveFuelRequired(forMass: 1969) // 966 (correct)
+recursiveFuelRequired(forMass: 100756) // 50346 (correct)
+
+// MARK: Part 2
+
+let part2Answer = mappedPuzzleInput
+    .map { recursiveFuelRequired(forMass: $0) }
+    .reduce(0, +)
+
+print(part2Answer) // 5104215 (correct!)
