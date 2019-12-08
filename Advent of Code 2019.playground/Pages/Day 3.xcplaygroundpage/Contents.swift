@@ -36,10 +36,12 @@ enum Direction {
     }
 }
 
+/*
 try? Direction(input: "R8")
 try? Direction(input: "U5")
 try? Direction(input: "L5")
 try? Direction(input: "D3")
+*/
 
 func position(after direction: Direction, startingAt start: CGPoint = CGPoint(x: 0, y: 0)) -> CGPoint {
     switch direction {
@@ -54,7 +56,7 @@ func position(after direction: Direction, startingAt start: CGPoint = CGPoint(x:
     }
 }
 
-position(after: .up(5))
+//position(after: .up(5))
 
 extension CGPoint {
     func position(after direction: Direction) -> CGPoint {
@@ -71,10 +73,12 @@ extension CGPoint {
     }
 }
 
+/*
 CGPoint(x: 0, y: 0)
     .position(after: .up(5))
     .position(after: .down(3))
     .position(after: .left(10))
+*/
 
 func directionsArray(from input: String) throws -> [Direction] {
     let inputComponents = input.components(separatedBy: ",")
@@ -84,6 +88,7 @@ func directionsArray(from input: String) throws -> [Direction] {
     return try nonEmpty.map { try Direction(input: $0) }
 }
 
+/*
 do {
     let exampleString1 = "R8,U5,L5,D3"
     let directions1 = try directionsArray(from: exampleString1)
@@ -93,6 +98,7 @@ do {
 } catch {
     print(error)
 }
+*/
 
 extension CGPoint: Hashable {
     public func hash(into hasher: inout Hasher) {
@@ -101,6 +107,50 @@ extension CGPoint: Hashable {
         hasher.finalize()
     }
 }
+
+struct PointDisplacement: Hashable {
+    let point: CGPoint
+    let displacement: Int
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(point)
+    }
+    
+    static var zero: PointDisplacement {
+        return PointDisplacement(point: CGPoint.zero, displacement: 0)
+    }
+    
+    /*
+    func pointsCoveredByMoving(_ direction: Direction) -> Set<PointDisplacement> {
+        var setToReturn: Set<PointDisplacement> = []
+        
+        let destination = self.point.position(after: direction)
+        
+        var newPoint = self
+        
+        while newPoint != destination {
+            switch direction {
+            case .up:
+                newPoint = CGPoint(x: newPoint.x, y: newPoint.y + 1)
+                setToReturn.insert(newPoint)
+            case .down:
+                newPoint = CGPoint(x: newPoint.x, y: newPoint.y - 1)
+                setToReturn.insert(newPoint)
+            case .left:
+                newPoint = CGPoint(x: newPoint.x - 1, y: newPoint.y)
+                setToReturn.insert(newPoint)
+            case .right:
+                newPoint = CGPoint(x: newPoint.x + 1, y: newPoint.y)
+                setToReturn.insert(newPoint)
+            }
+        }
+        
+        return setToReturn
+    }
+    */
+}
+
+//var set = Set<PointDisplacement>()
 
 extension CGPoint {
     func pointsCoveredByMoving(_ direction: Direction) -> Set<CGPoint> {
@@ -129,9 +179,34 @@ extension CGPoint {
         
         return setToReturn
     }
+    
+    func routeOfPointsByMoving(_ direction: Direction) -> [CGPoint] {
+
+        let intX = Int(self.x)
+        let intY = Int(self.y)
+        
+        switch direction {
+        case .up(let displacement):
+            let intDisplacement = Int(displacement)
+            let newYs = intY + 1...intY + intDisplacement
+            return newYs.map { CGPoint(x: intX, y: $0) }
+        case .down(let displacement):
+            let intDisplacement = Int(displacement)
+            let newYs = intY - intDisplacement...intY - 1
+            return newYs.map { CGPoint(x: intX, y: $0) }.reversed()
+        case .left(let displacement):
+            let intDisplacement = Int(displacement)
+            let newXs = intX - intDisplacement...intX - 1
+            return newXs.map { CGPoint(x: $0, y: intY) }.reversed()
+        case .right(let displacement):
+            let intDisplacement = Int(displacement)
+            let newXs = intX + 1...intX + intDisplacement
+            return newXs.map { CGPoint(x: $0, y: intY) }
+        }
+    }
 }
 
-CGPoint(x: 0, y: 0).pointsCoveredByMoving(.right(8))
+//CGPoint(x: 0, y: 0).pointsCoveredByMoving(.right(8))
 
 extension CGPoint {
     func pointsCoveredByMoving(_ directions: [Direction]) -> Set<CGPoint> {
@@ -147,9 +222,23 @@ extension CGPoint {
         
         return setToReturn
     }
+    
+    func routeOfPointsByMoving(_ directions: [Direction]) -> [CGPoint] {
+        var arrayToReturn = [CGPoint]()
+        
+        var newPoint = self
+        
+        for direction in directions {
+            let routeTo = newPoint.routeOfPointsByMoving(direction)
+            arrayToReturn += routeTo
+            newPoint = newPoint.position(after: direction)
+        }
+        
+        return arrayToReturn
+    }
 }
 
-CGPoint(x: 0, y: 0).pointsCoveredByMoving([.up(2), .right(3)])
+//CGPoint(x: 0, y: 0).pointsCoveredByMoving([.up(2), .right(3)])
 
 extension CGPoint {
     var manhattenDistanceToOrigin: Int {
@@ -175,12 +264,52 @@ func nearestOverlappingPoint(path1: String, path2: String) throws -> Int {
     return nearestPoint.manhattenDistanceToOrigin
 }
 
+func shortestRouteToFirstOverlappingPoint(path1: String, path2: String) throws -> Int {
+    let directions1 = try directionsArray(from: path1)
+    let directions2 = try directionsArray(from: path2)
+    
+    let pointsCovered1 = CGPoint.zero.routeOfPointsByMoving(directions1)
+    let pointsCovered2 = CGPoint.zero.routeOfPointsByMoving(directions2)
+    
+    // Make a set here? Just for the purposes of finding crossover?
+    
+    let set1 = Set(pointsCovered1)
+    let set2 = Set(pointsCovered2)
+    
+    let pointsInBoth = set1.intersection(set2)
+    
+    let firstVisits1 = pointsInBoth.compactMap { pointsCovered1.firstIndex(of: $0) }.map { Int($0) }
+    let firstVisits2 = pointsInBoth.compactMap { pointsCovered2.firstIndex(of: $0) }.map { Int($0) }
+    
+    let totalDistances = firstVisits1.enumerated().map { index, distance1 -> Int in
+        let distance2 = firstVisits2[index]
+        let total = distance1 + distance2
+        return total
+    }
+    
+    let sortedDistances = totalDistances.sorted(by: <)
+    
+    let shortestDistance = sortedDistances.first
+    
+//    print(pointsInBoth)
+    
+    return (shortestDistance ?? 0) + 2 // Need to + 2. Once because we don't count the origin, once because the index in the array will be the number of steps -1.
+}
+
 do {
-    let example1 = try nearestOverlappingPoint(path1: "R8,U5,L5,D3,", path2: "U7,R6,D4,L4,")
     
-    let example2 = try nearestOverlappingPoint(path1: "R75,D30,R83,U83,L12,D49,R71,U7,L72", path2: "U62,R66,U55,R34,D71,R55,D58,R83")
+    // MARK: Part 1 examples
+//    let part1Example1 = try nearestOverlappingPoint(path1: "R8,U5,L5,D3,", path2: "U7,R6,D4,L4,")
     
-    let example3 = try nearestOverlappingPoint(path1: "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51", path2: "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7")
+//    let part1Example2 = try nearestOverlappingPoint(path1: "R75,D30,R83,U83,L12,D49,R71,U7,L72", path2: "U62,R66,U55,R34,D71,R55,D58,R83")
+    
+//    let part1Example3 = try nearestOverlappingPoint(path1: "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51", path2: "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7")
+    
+    // MARK: Part 2 examples
+//    let part2Example1 = try shortestRouteToFirstOverlappingPoint(path1: "R8,U5,L5,D3,", path2: "U7,R6,D4,L4,")
+//    let part2Example2 = try shortestRouteToFirstOverlappingPoint(path1: "R75,D30,R83,U83,L12,D49,R71,U7,L72", path2: "U62,R66,U55,R34,D71,R55,D58,R83")
+//    let part2Example3 = try shortestRouteToFirstOverlappingPoint(path1: "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51", path2: "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7")
+    
 } catch {
     print(error)
 }
@@ -192,8 +321,21 @@ L1007,U199,L531,D379,L313,U768,L87,U879,R659,U307,L551,D964,L725,D393,R239,D454,
 
 let inputComponents = puzzleInput.components(separatedBy: "\n")
 
+// MARK: Part 1
+
+/*
 do {
-//    let part1 = try nearestOverlappingPoint(path1: inputComponents[0], path2: inputComponents[1]) // 352 (correct!)
+    let part1 = try nearestOverlappingPoint(path1: inputComponents[0], path2: inputComponents[1]) // 352 (correct!)
+} catch {
+    print(error)
+}
+*/
+
+// MARK: Part 2
+
+do {
+    let part2 = try shortestRouteToFirstOverlappingPoint(path1: inputComponents[0], path2: inputComponents[1])
+    print(part2) // 43848 (correct!)
 } catch {
     print(error)
 }
