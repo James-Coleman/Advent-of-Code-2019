@@ -101,6 +101,6 @@ extension Int {
 111122.couldBePasswordPart2 // Should be true
 122345.couldBePasswordPart2 // Should be true
 
-let possiblePasswordsPart2 = puzzleInput.filter { $0.couldBePasswordPart2 }
+//let possiblePasswordsPart2 = puzzleInput.filter { $0.couldBePasswordPart2 }
 
-print(possiblePasswordsPart2.count) // 1133 (correct)
+//print(possiblePasswordsPart2.count) // 1133 (correct)
